@@ -60,27 +60,32 @@ jobs:
           secret_astro_api_token: ${{ secrets.ASTRO_API_TOKEN }}
 
       - name: Install dependencies
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+          WORKSPACE_ID: ${{ steps.get-astro-env-info.outputs.workspace_id }}
         run: |
 
           wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
 
           curl -sSL https://install.astronomer.io | sudo bash -s
-          astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
-          astro workspace switch ${{ steps.get-astro-env-info.outputs.workspace_id }}
+          astro context switch "$ASTRONOMER_HOST"
+          astro workspace switch "$WORKSPACE_ID"
 
           # Generate a random test_uid and set it as an environment variable, so we can append it to the deployment name
           test_uid=$(uuidgen)
-          echo "test_uid=$test_uid" >> $GITHUB_ENV
+          echo "TEST_UID=$test_uid" >> "$GITHUB_ENV"
 
       - name: Create Deployment
         id: create-deployment
+        env:
+          DEPLOYMENT_TEMPLATE: ${{ matrix.deployment }}
         run: |
 
           # Update the deployment name to maintain uniqueness
-          sed -i "s|  name:.*|  name: deploy-action-e2e-${{ env.test_uid }}|g"  e2e-setup/deployment-templates/${{ matrix.deployment }}
+          sed -i "s|  name:.*|  name: deploy-action-e2e-${TEST_UID}|g" "e2e-setup/deployment-templates/$DEPLOYMENT_TEMPLATE"
 
-          DEPLOYMENT_ID=$(astro deployment create --deployment-file e2e-setup/deployment-templates/${{ matrix.deployment }} | yq e '.deployment.metadata.deployment_id' -)
-          if [[ "${{ matrix.deployment }}" == "deployment.yaml" ]]; then
+          DEPLOYMENT_ID=$(astro deployment create --deployment-file "e2e-setup/deployment-templates/$DEPLOYMENT_TEMPLATE" | yq e '.deployment.metadata.deployment_id' -)
+          if [[ "$DEPLOYMENT_TEMPLATE" == "deployment.yaml" ]]; then
             echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
           else
             echo "HIBERNATE_DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
@@ -124,10 +129,12 @@ jobs:
           curl -sSL https://install.astronomer.io | sudo bash -s
 
       - name: Mock git commands
+        env:
+          DEPLOY_TYPE: ${{ matrix.deploy_type }}
         run: |
 
           # if deploy_type is dags, then use dags-deploy-git.sh as mock otherwise use image-deploy-git.sh as mock
-          if [[ "${{ matrix.deploy_type }}" == "dags" ]]; then
+          if [[ "$DEPLOY_TYPE" == "dags" ]]; then
             mv e2e-setup/mocks/dag-deploy-git.sh /usr/local/bin/git
           else
             mv e2e-setup/mocks/image-deploy-git.sh /usr/local/bin/git
@@ -138,7 +145,9 @@ jobs:
           chmod +x /usr/local/bin/astro
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Get Deployment Info Before Test
         id: get-deployment-before
@@ -219,7 +228,9 @@ jobs:
           curl -sSL https://install.astronomer.io | sudo bash -s
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Get Deployment Info Before Test
         id: get-deployment-before
@@ -297,7 +308,9 @@ jobs:
           curl -sSL https://install.astronomer.io | sudo bash -s
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Mock git commands for DAG Deploy
         run: |
@@ -377,10 +390,12 @@ jobs:
           secret_astro_api_token: ${{ secrets.ASTRO_API_TOKEN }}
 
       - name: Mock git commands
+        env:
+          DEPLOY_TYPE: ${{ matrix.deploy_type }}
         run: |
 
           # if deploy_type is dags, then use dags-deploy-git.sh as mock otherwise use image-deploy-git.sh as mock
-          if [[ "${{ matrix.deploy_type }}" == "dags" ]]; then
+          if [[ "$DEPLOY_TYPE" == "dags" ]]; then
             mv e2e-setup/mocks/dag-deploy-git.sh /usr/local/bin/git
           else
             mv e2e-setup/mocks/image-deploy-git.sh /usr/local/bin/git
@@ -396,7 +411,9 @@ jobs:
           curl -sSL https://install.astronomer.io | sudo bash -s
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Get Deployment Info Before Test
         id: get-deployment-before
@@ -476,7 +493,9 @@ jobs:
           curl -sSL https://install.astronomer.io | sudo bash -s
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Mock git commands for DAG Deploy
         run: |
@@ -542,9 +561,11 @@ jobs:
         id: validate-dbt-deploy-action
         if: ${{ matrix.deploy_type == 'dbt' }}
         shell: bash
+        env:
+          DESIRED_BUNDLE_VERSION: ${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}
         run: |
 
-          if [[ "${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}" != "" ]]; then
+          if [[ -n "$DESIRED_BUNDLE_VERSION" ]]; then
             echo "DBT Deploy Action validation failed: DBT bundle found, but there should be no deploy"
             exit 1
           fi
@@ -592,7 +613,9 @@ jobs:
         run: cd e2e-setup/astro-project && docker build -t custom-image:latest .
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Get Deployment Info Before Test
         id: get-deployment-before
@@ -630,7 +653,7 @@ jobs:
           dag_tarball_version_before: ${{ steps.get-deployment-before.outputs.desired_dag_tarball_version }}
           image_version_before: ${{ steps.get-deployment-before.outputs.desired_image_version }}
           hibernation_spec_before: ${{ steps.get-deployment-before.outputs.hibernation_spec }}
-          dag_tarball_version_after: ${{ steps.get-deployment-after.outputs.desiredDagTarballVersion }}
+          dag_tarball_version_after: ${{ steps.get-deployment-after.outputs.desired_dag_tarball_version }}
           image_version_after: ${{ steps.get-deployment-after.outputs.desired_image_version }}
           hibernation_spec_after: ${{ steps.get-deployment-after.outputs.hibernation_spec }}
 
@@ -680,7 +703,9 @@ jobs:
           echo "test_start_time=$test_start_time" >> $GITHUB_OUTPUT
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: DBT Deploy to Astro
         uses: ./
@@ -705,14 +730,18 @@ jobs:
       - name: Validate DBT Deploy Action
         id: validate-dbt-deploy-action
         shell: bash
+        env:
+          DESIRED_BUNDLE_VERSION: ${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}
+          UPDATED_AT: ${{ steps.get-dbt-bundle-info.outputs.updated_at }}
+          TEST_START_TIME: ${{ steps.setup.outputs.test_start_time }}
         run: |
-          if [[ "${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}" == "" ]]; then
+          if [[ -z "$DESIRED_BUNDLE_VERSION" ]]; then
             echo "DBT Deploy Action validation failed: DBT bundle not found"
             exit 1
           fi
 
-          updated_at=$(date -u -d "${{ steps.get-dbt-bundle-info.outputs.updated_at }}" +"%s.%N")
-          test_start_time=$(date -u -d "${{ steps.setup.outputs.test_start_time }}" +"%s.%N")
+          updated_at=$(date -u -d "$UPDATED_AT" +"%s.%N")
+          test_start_time=$(date -u -d "$TEST_START_TIME" +"%s.%N")
           if [[ $(echo "$updated_at > $test_start_time" | bc -l) ]]; then
             echo "DBT Deploy Action validation succeeded: DBT bundle found"
             exit 0
@@ -763,7 +792,9 @@ jobs:
           echo "test_start_time=$test_start_time" >> $GITHUB_OUTPUT
 
       - name: Set CLI context
-        run: astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+        run: astro context switch "$ASTRONOMER_HOST"
 
       - name: Create Deployment Preview
         id: create-deployment-preview
@@ -927,14 +958,18 @@ jobs:
       - name: Validate DBT Deploy Action
         id: validate-dbt-deploy-action
         shell: bash
+        env:
+          DESIRED_BUNDLE_VERSION: ${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}
+          UPDATED_AT: ${{ steps.get-dbt-bundle-info.outputs.updated_at }}
+          TEST_START_TIME: ${{ steps.setup.outputs.test_start_time }}
         run: |
-          if [[ "${{ steps.get-dbt-bundle-info.outputs.desired_bundle_version }}" == "" ]]; then
+          if [[ -z "$DESIRED_BUNDLE_VERSION" ]]; then
             echo "DBT Deploy Action validation failed: DBT bundle not found"
             exit 1
           fi
 
-          updated_at=$(date -u -d "${{ steps.get-dbt-bundle-info.outputs.updated_at }}" +"%s.%N")
-          test_start_time=$(date -u -d "${{ steps.setup.outputs.test_start_time }}" +"%s.%N")
+          updated_at=$(date -u -d "$UPDATED_AT" +"%s.%N")
+          test_start_time=$(date -u -d "$TEST_START_TIME" +"%s.%N")
           if [[ $(echo "$updated_at > $test_start_time" | bc -l) ]]; then
             echo "DBT Deploy Action validation succeeded: DBT bundle found"
             exit 0
@@ -998,12 +1033,18 @@ jobs:
           secret_astro_api_token: ${{ secrets.ASTRO_API_TOKEN }}
 
       - name: Install Astro CLI and set context
+        env:
+          ASTRONOMER_HOST: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
+          WORKSPACE_ID: ${{ steps.get-astro-env-info.outputs.workspace_id }}
         run: |
           curl -sSL https://install.astronomer.io | sudo bash -s
-          astro context switch ${{ steps.get-astro-env-info.outputs.astronomer_host }}
-          astro workspace switch ${{ steps.get-astro-env-info.outputs.workspace_id }}
+          astro context switch "$ASTRONOMER_HOST"
+          astro workspace switch "$WORKSPACE_ID"
 
       - name: Delete Deployment
+        env:
+          DEPLOYMENT_ID: ${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}
+          HIBERNATE_DEPLOYMENT_ID: ${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}
         run: |
-          astro deployment delete -f ${{ needs.create-test-deployments.outputs.DEPLOYMENT_ID }}
-          astro deployment delete -f ${{ needs.create-test-deployments.outputs.HIBERNATE_DEPLOYMENT_ID }}
+          astro deployment delete -f "$DEPLOYMENT_ID"
+          astro deployment delete -f "$HIBERNATE_DEPLOYMENT_ID"
