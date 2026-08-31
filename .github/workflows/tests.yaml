@@ -5,6 +5,10 @@ on:
     paths:
       - e2e/lint_yaml.yaml
 
+# Enforce least privilege permissions for the end-to-end test workflow
+permissions:
+  contents: read
+
 env:
   ASTRO_API_TOKEN: ${{ secrets.ASTRO_API_TOKEN }}
 
@@ -15,7 +19,7 @@ jobs:
     environment: e2e-test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Redact Inputs
         run: |
@@ -44,7 +48,7 @@ jobs:
       HIBERNATE_DEPLOYMENT_ID: ${{ steps.create-deployment.outputs.HIBERNATE_DEPLOYMENT_ID }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -105,7 +109,7 @@ jobs:
         deploy_type: [dags, image-and-dags]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -200,7 +204,7 @@ jobs:
           ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -284,7 +288,7 @@ jobs:
           ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -374,7 +378,7 @@ jobs:
         deploy_type: [dags, image-and-dags]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -469,7 +473,7 @@ jobs:
         deploy_type: [infer, dbt, dags, image-and-dags]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -586,7 +590,7 @@ jobs:
           ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -671,7 +675,7 @@ jobs:
           ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -764,7 +768,7 @@ jobs:
           ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
@@ -862,7 +866,7 @@ jobs:
         id: get-deployment-after-deploy-preview
         uses: ./.github/workflows/e2e/get_deployment_info
         with:
-          deployment_id: ${{ steps.deployment-preview-deploy.outputs.preview-id }}
+          deployment_id: ${{ steps.create-deployment-preview.outputs.preview-id }}
           organization_id: ${{ steps.get-astro-env-info.outputs.organization_id }}
           astro_api_token: ${{ steps.get-astro-env-info.outputs.astro_api_token }}
           astronomer_host: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
@@ -910,7 +914,7 @@ jobs:
         id: get-deployment-after-dag-deploy
         uses: ./.github/workflows/e2e/get_deployment_info
         with:
-          deployment_id: ${{ steps.deployment-preview-dag-deploy.outputs.preview-id }}
+          deployment_id: ${{ steps.create-deployment-preview.outputs.preview-id }}
           organization_id: ${{ steps.get-astro-env-info.outputs.organization_id }}
           astro_api_token: ${{ steps.get-astro-env-info.outputs.astro_api_token }}
           astronomer_host: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
@@ -950,7 +954,7 @@ jobs:
         id: get-dbt-bundle-info
         uses: ./.github/workflows/e2e/get_bundle_info
         with:
-          deployment_id: ${{ steps.deployment-preview-dag-deploy.outputs.preview-id }}
+          deployment_id: ${{ steps.create-deployment-preview.outputs.preview-id }}
           organization_id: ${{ steps.get-astro-env-info.outputs.organization_id }}
           astro_api_token: ${{ steps.get-astro-env-info.outputs.astro_api_token }}
           astronomer_host: ${{ steps.get-astro-env-info.outputs.astronomer_host }}
@@ -1017,7 +1021,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
 
       - name: Get Astro Environment Info
         id: get-astro-env-info
