@@ -22,5 +22,5 @@ permissions:
 jobs:
   # Calling Security Reusable action which would in turn call other reusable actions example - Semgrep
   call_security:
-    uses: falconxio/security-actions/.github/workflows/security.yml@main
+    uses: falconxio/security-actions/.github/workflows/security.yml@master
     secrets: inherit
