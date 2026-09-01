@@ -11,8 +11,8 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.1.7
-      - name: yaml-lint
-        uses: ibiqlik/action-yamllint@27633d7dcf4615170723a8863de1073b646c0d8f # pinned SHA version instead of mutable tag
-        with:
-          file_or_dir: action.yaml
+      - uses: actions/checkout@v3
+      - name: Install and run yamllint
+        run: |
+          sudo apt-get update && sudo apt-get install -y yamllint
+          yamllint action.yaml
